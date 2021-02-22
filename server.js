@@ -42,6 +42,31 @@ function cityLocation(searchQuery, displayName, lat, lon) {
 
 }
 
+app.get("/weather", handleWeather);
+
+function handleWeather(req, res) {
+    let wehaterObject = getWeatherData();
+    res.status(200).send(wehaterObject);
+
+}
+
+function getWeatherData() {
+    let weatherData = require("./data/weather.json");
+    let weaherDataArray = weatherData.data.map(element => {
+        return new WeatherConstructor(element.weather.description, new Date(element.datetime).toDateString())
+    });
+    return weaherDataArray;
+}
+
+function WeatherConstructor(forecast, time) {
+    this.forecast = forecast;
+    this.time = time;
+
+}
+
+
 app.listen(PORT, () => {
     console.log("the app is working" + PORT);
-})
+});
+
+
