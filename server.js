@@ -6,6 +6,8 @@ let express = require("express");
 
 const cors = require('cors');
 
+let superagent = require('superagent');
+
 let app = express();
 
 app.use(cors());
@@ -16,6 +18,13 @@ const PORT = process.env.PORT;
 
 
 app.get("/location", handleLocation);
+app.get("/weather", handleWeather);
+
+app.get("*", handleError);
+
+
+
+
 
 function handleLocation(req, res) {
     let searchQuery = req.query.city;
@@ -25,14 +34,28 @@ function handleLocation(req, res) {
 }
 
 function getLocationData(searchQuery) {
-    let locationData = require("./data/location.json");
-    let longitude = locationData[0].lon;
-    let latitude = locationData[0].lat;
-    let displayName = locationData[0].display_name;
-
-    let responseObject = new cityLocation(searchQuery, displayName, latitude, longitude);
-    return responseObject;
-}
+    const query = {
+      key: process.env.GEOCODE_API_KEY,
+      q: searchQuery,
+      limit: 1,
+      format: 'json'
+    };
+    let url = 'https://us1.locationiq.com/v1/search.php';
+    return superagent.get(url).query(query).then(data => {
+      try {
+        let longitude = data.body[0].lon;
+        let latitude = data.body[0].lat;
+        let displayName = data.body[0].display_name;
+        let responseObject = new CityLocation(searchQuery, displayName, lat, lon);
+        return responseObject;
+      } catch (error) {
+        res.status(500).send(error);
+      }
+    }).catch(error => {
+      res.status(500).send('There was an error getting data from API ' + error);
+    });
+    
+  }
 
 function cityLocation(searchQuery, displayName, lat, lon) {
     this.search_query = searchQuery;
@@ -42,7 +65,7 @@ function cityLocation(searchQuery, displayName, lat, lon) {
 
 }
 
-app.get("/weather", handleWeather);
+
 
 function handleWeather(req, res) {
     let wehaterObject = getWeatherData();
@@ -63,6 +86,13 @@ function WeatherConstructor(forecast, time) {
     this.time = time;
 
 }
+
+
+function handleError(req, res) {
+    res.status(404).send("this page don't work")
+}
+
+
 
 
 app.listen(PORT, () => {
