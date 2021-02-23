@@ -27,6 +27,7 @@ app.get("*", handleError);
 
 
 function handleLocation(req, res) {
+  console.log(req.query);
   let searchQuery = req.query.city;
   getLocationData(searchQuery, res).then(data => {
     res.status(200).send(data);
@@ -77,8 +78,8 @@ function getWeatherData(latQuery, lonQuery, res) {
   let url = `http://api.weatherbit.io/v2.0/forecast/daily?key=5858cc113c8041d987b4f092b7be6624&lat=${latQuery}&lon=${lonQuery}`
   return superagent.get(url).then(data => {
     try {
-      let arrayOfWeatherObjects = data.map(element => {
-        return new WeatherConstructor(element.body.data.weather.description, new Date(element.body.data.datetime.split(':').splice(0,1)[0]).toDateString());
+      let arrayOfWeatherObjects = data.body.data.map((element,i) => {
+        return new WeatherConstructor(element.weather.description+".", new Date(element.datetime.split(':').splice(0,1)[0]).toDateString());
       })
     return arrayOfWeatherObjects;
     }
