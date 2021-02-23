@@ -35,7 +35,7 @@ function handleLocation(req, res) {
 }
 
 function getLocationData(searchQuery) {
-  let url = "https://us1.locationiq.com/v1/search.php?key=pk.7dd12762bcaf61d37a5cefac12848a15&q=amman&limit=1&format=json"
+  let url = `https://us1.locationiq.com/v1/search.php?key=pk.7dd12762bcaf61d37a5cefac12848a15&q=${searchQuery}&limit=1&format=json`
   return superagent.get(url).then(data => {
     try {
       let displayName = data.body[0].display_name;
@@ -64,18 +64,31 @@ function cityLocation(searchQuery, displayName, lat, lon) {
 
 
 function handleWeather(req, res) {
-  let wehaterObject = getWeatherData();
-  res.status(200).send(wehaterObject);
-
-}
-
-function getWeatherData() {
-  let weatherData = require("./data/weather.json");
-  let weaherDataArray = weatherData.data.map(element => {
-    return new WeatherConstructor(element.weather.description, new Date(element.datetime).toDateString())
+  console.log(req.query);
+  let latQuery = req.query.lat;
+  let lonQuery = req.query.lon;
+  getWeatherData(latQuery, lonQuery, res).then(data => {
+    res.status(400).send(data);
   });
-  return weaherDataArray;
+
 }
+
+function getWeatherData(latQuery, lonQuery, res) {
+  let url = `http://api.weatherbit.io/v2.0/forecast/daily?key=5858cc113c8041d987b4f092b7be6624&lat=${latQuery}&lon=${lonQuery}`
+  return superagent.get(url).then(data => {
+    try {
+      let arrayOfWeatherObjects = data.map(element => {
+        return new WeatherConstructor(element.body.data.weather.description, new Date(element.body.data.datetime.split(':').splice(0,1)[0]).toDateString());
+      })
+    return arrayOfWeatherObjects;
+    }
+    catch (error) {
+      res.status(500).send("there is an error..." + error);
+    }
+  }).catch(error => {
+    res.status(500).send("there is an error..." + error);
+  })
+};
 
 function WeatherConstructor(forecast, time) {
   this.forecast = forecast;
