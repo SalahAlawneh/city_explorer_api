@@ -52,6 +52,36 @@ function handleError(req, res) {
 
 
 function getLocationData(searchQuery) {
+
+/* question for my TA:
+
+const query = {
+  key: process.env.GEOCODE_API_KEY,
+  q: searchQuery,
+  limit: 1,
+  format: "json"
+};
+
+let url = `https://us1.locationiq.com/v1/search.php`
+  return superagent.get(url).query(query).then(data => {
+    try {
+      let displayName = data.body[0].display_name;
+      let latitude = data.body[0].lat;
+      let longitude = data.body[0].lon;
+      return new cityLocation(searchQuery, displayName, latitude, longitude);
+    }
+    catch (error) {
+      res.status(500).send("there is an error" + error);
+    }
+  }).catch(error => {
+    res.status(500).send("there is an error" + error)
+
+  })
+
+}
+
+*/
+
   let url = `https://us1.locationiq.com/v1/search.php?key=pk.7dd12762bcaf61d37a5cefac12848a15&q=${searchQuery}&limit=1&format=json`
   return superagent.get(url).then(data => {
     try {
