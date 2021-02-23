@@ -27,76 +27,72 @@ app.get("*", handleError);
 
 
 function handleLocation(req, res) {
-    let searchQuery = req.query.city;
-    let locationObject = getLocationData(searchQuery);
-    res.status(200).send(locationObject);
+  let searchQuery = req.query.city;
+  getLocationData(searchQuery, res).then(data => {
+    res.status(200).send(data);
+  })
 
 }
 
 function getLocationData(searchQuery) {
-    const query = {
-      key: process.env.GEOCODE_API_KEY,
-      q: searchQuery,
-      limit: 1,
-      format: 'json'
-    };
-    let url = 'https://us1.locationiq.com/v1/search.php';
-    return superagent.get(url).query(query).then(data => {
-      try {
-        let longitude = data.body[0].lon;
-        let latitude = data.body[0].lat;
-        let displayName = data.body[0].display_name;
-        let responseObject = new CityLocation(searchQuery, displayName, lat, lon);
-        return responseObject;
-      } catch (error) {
-        res.status(500).send(error);
-      }
-    }).catch(error => {
-      res.status(500).send('There was an error getting data from API ' + error);
-    });
-    
-  }
+  let url = "https://us1.locationiq.com/v1/search.php?key=pk.7dd12762bcaf61d37a5cefac12848a15&q=amman&limit=1&format=json"
+  return superagent.get(url).then(data => {
+    try {
+      let displayName = data.body[0].display_name;
+      let latitude = data.body[0].lat;
+      let longitude = data.body[0].lon;
+      return new cityLocation(searchQuery, displayName, latitude, longitude);
+    }
+    catch (error) {
+      res.status(500).send("there is an error" + error);
+    }
+  }).catch(error => {
+    res.status(500).send("there is an error" + error)
+
+  })
+
+}
 
 function cityLocation(searchQuery, displayName, lat, lon) {
-    this.search_query = searchQuery;
-    this.formatted_query = displayName;
-    this.latitude = lat;
-    this.longitude = lon;
+  this.search_query = searchQuery;
+  this.formatted_query = displayName;
+  this.latitude = lat;
+  this.longitude = lon;
 
 }
 
 
 
 function handleWeather(req, res) {
-    let wehaterObject = getWeatherData();
-    res.status(200).send(wehaterObject);
+  let wehaterObject = getWeatherData();
+  res.status(200).send(wehaterObject);
 
 }
 
 function getWeatherData() {
-    let weatherData = require("./data/weather.json");
-    let weaherDataArray = weatherData.data.map(element => {
-        return new WeatherConstructor(element.weather.description, new Date(element.datetime).toDateString())
-    });
-    return weaherDataArray;
+  let weatherData = require("./data/weather.json");
+  let weaherDataArray = weatherData.data.map(element => {
+    return new WeatherConstructor(element.weather.description, new Date(element.datetime).toDateString())
+  });
+  return weaherDataArray;
 }
 
 function WeatherConstructor(forecast, time) {
-    this.forecast = forecast;
-    this.time = time;
+  this.forecast = forecast;
+  this.time = time;
 
 }
 
 
 function handleError(req, res) {
-    res.status(404).send("this page don't work")
+  res.status(404).send("this page don't work")
 }
 
 
 
 
 app.listen(PORT, () => {
-    console.log("the app is working" + PORT);
+  console.log("the app is working" + PORT);
 });
 
 
