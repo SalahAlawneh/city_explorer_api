@@ -1,30 +1,27 @@
 "use strict";
 
+
+// INIT//
 const { timeStamp } = require("console");
 
 let express = require("express");
-
 const cors = require('cors');
-
 let superagent = require('superagent');
-
 let app = express();
-
 app.use(cors());
-
 require("dotenv").config();
-
 const PORT = process.env.PORT;
 
 
+
+// GET REQUESTS //
 app.get("/location", handleLocation);
 app.get("/weather", handleWeather);
-
 app.get("*", handleError);
 
 
 
-
+// HANDLE RESPONSES //
 
 function handleLocation(req, res) {
   console.log(req.query);
@@ -32,8 +29,27 @@ function handleLocation(req, res) {
   getLocationData(searchQuery, res).then(data => {
     res.status(200).send(data);
   })
+}
+
+function handleWeather(req, res) {
+  console.log(req.query);
+  let latQuery = req.query.lat;
+  let lonQuery = req.query.lon;
+  getWeatherData(latQuery, lonQuery, res).then(data => {
+    res.status(400).send(data);
+  });
 
 }
+
+
+function handleError(req, res) {
+  res.status(404).send("this page don't work")
+}
+
+
+
+// GET DATA FUNCTIONS //
+
 
 function getLocationData(searchQuery) {
   let url = `https://us1.locationiq.com/v1/search.php?key=pk.7dd12762bcaf61d37a5cefac12848a15&q=${searchQuery}&limit=1&format=json`
@@ -54,25 +70,6 @@ function getLocationData(searchQuery) {
 
 }
 
-function cityLocation(searchQuery, displayName, lat, lon) {
-  this.search_query = searchQuery;
-  this.formatted_query = displayName;
-  this.latitude = lat;
-  this.longitude = lon;
-
-}
-
-
-
-function handleWeather(req, res) {
-  console.log(req.query);
-  let latQuery = req.query.lat;
-  let lonQuery = req.query.lon;
-  getWeatherData(latQuery, lonQuery, res).then(data => {
-    res.status(400).send(data);
-  });
-
-}
 
 function getWeatherData(latQuery, lonQuery, res) {
   let url = `http://api.weatherbit.io/v2.0/forecast/daily?key=5858cc113c8041d987b4f092b7be6624&lat=${latQuery}&lon=${lonQuery}`
@@ -91,6 +88,21 @@ function getWeatherData(latQuery, lonQuery, res) {
   })
 };
 
+
+
+
+
+// CONSTRUCTORS //
+function cityLocation(searchQuery, displayName, lat, lon) {
+  this.search_query = searchQuery;
+  this.formatted_query = displayName;
+  this.latitude = lat;
+  this.longitude = lon;
+
+}
+
+
+
 function WeatherConstructor(forecast, time) {
   this.forecast = forecast;
   this.time = time;
@@ -98,12 +110,11 @@ function WeatherConstructor(forecast, time) {
 }
 
 
-function handleError(req, res) {
-  res.status(404).send("this page don't work")
-}
 
 
 
+
+// LISTEN TO THE PORT //
 
 app.listen(PORT, () => {
   console.log("the app is working" + PORT);
