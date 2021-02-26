@@ -19,7 +19,10 @@ const client = new pg.Client({ connectionString: process.env.DATABASE_URL, ssl: 
 app.get("/location", handleLocation);
 app.get("/weather", handleWeather);
 app.get("/parks", handleParks)
+app.get("/movies", handleMovies);
+app.get("/yelp", handleYelp)
 app.get("*", handleError);
+
 
 
 // HANDLE RESPONSES //
@@ -53,6 +56,19 @@ function handleError(req, res) {
   res.status(404).send("this page don't work")
 }
 
+function handleMovies(req, res) {
+  let cityName = req.query.search_query;
+  getMoviesData(cityName).then(e => {
+    res.status(200).send(e);
+  })
+}
+
+function handleYelp(req, res) {
+  let cityName = req.query.search_query;
+  getYelpData(cityName).then(e => {
+    res.status(200).send(e);
+  })
+}
 
 // GET DATA FUNCTIONS //
 
@@ -63,7 +79,7 @@ function getLocationData(searchQuery, res) {
   return client.query(seletRowFromSQL, [searchQuery]).then(dataBaseRow => {
     // console.log(dataBaseRow);
     if (dataBaseRow.rows.length > 0) {
-      console.log("data coming from data base");
+      // console.log("data coming from data base");
       return new cityLocation(dataBaseRow.rows[0].search_query, dataBaseRow.rows[0].formatted_query, dataBaseRow.rows[0].latitude, dataBaseRow.rows[0].longitude);
     } else {
       // if the location not stored in the database store it and after that send it to the man
@@ -83,7 +99,7 @@ function getLocationData(searchQuery, res) {
           let insertedSQL = `INSERT INTO locations (search_query, formatted_query,latitude,longitude) VALUES ($1, $2, $3, $4) RETURNING *;`
           let safeValues = [searchQuery, displayName, latitude, longitude];
           return client.query(insertedSQL, safeValues).then(data => {
-            console.log("data coming from API");
+            // console.log("data coming from API");
 
             return new cityLocation(searchQuery, displayName, latitude, longitude);
           }).catch((error) => {
@@ -157,6 +173,52 @@ function getParkData(searchQuery, res) {
 }
 
 
+function getYelpData(cityName) {
+  let query = {
+    location: cityName,
+    term: "restaurants",
+    limit: 20
+  }
+  let url = "https://api.yelp.com/v3/businesses/search?"
+  return superagent.get(url).set("Authorization", `Bearer ${process.env.YELP_API_KEY}`).query(query).then(e => {
+    let arrayOfMoviesData = e.body.businesses.map(e2 => {
+      console.log(new YelpConstructor(e2));
+      return new YelpConstructor(e2);
+    })
+    return arrayOfMoviesData;
+
+  }).catch(error => {
+    res.status(500).send("there is an error..." + error);
+  }
+  )
+}
+
+
+function getMoviesData(cityName) {
+
+  let query = {
+    api_key: process.env.MOVIE_API_KEY,
+    query: cityName,
+    limit: 20
+  }
+
+  let url = "https://api.themoviedb.org/3/search/movie";
+  return superagent.get(url).query(query).then(dataFromApe => {
+    let arrayOfMoviesObject = dataFromApe.body.results.map((e) => {
+
+      return new MoviesConstructor(e);
+
+    })
+
+    return arrayOfMoviesObject;
+
+  }).catch(error => {
+    res.status(500).send("there is an error..." + error);
+  }
+  )
+
+}
+
 // CONSTRUCTORS //
 function cityLocation(searchQuery, displayName, lat, lon) {
   this.search_query = searchQuery;
@@ -182,6 +244,23 @@ function ParksConstructor(name, address, fee, description, url) {
 
 }
 
+function MoviesConstructor(dataFromApe) {
+  this.title = dataFromApe.original_title;
+  this.overview = dataFromApe.overview;
+  this.average_votes = dataFromApe.vote_average;
+  this.total_votes = dataFromApe.vote_count;
+  this.image_url = `https://image.tmdb.org/t/p/w500${dataFromApe.poster_path}`;
+  this.popularity = dataFromApe.popularity;
+  this.released_on = dataFromApe.release_date;
+}
+
+function YelpConstructor(dataFromAPI) {
+  this.name = dataFromAPI.name;
+  this.image_url = dataFromAPI.image_url;
+  this.price = dataFromAPI.price;
+  this.rating = dataFromAPI.rating;
+  this.url = dataFromAPI.url;
+}
 
 // LISTEN TO THE PORT //
 
